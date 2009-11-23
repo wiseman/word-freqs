@@ -10,7 +10,7 @@ from the analysis.
 
 I wrote this to get some experience with javascript, Ajax, Dojo, etc.
 
-.. image http://github.com/wiseman/word-freqs/raw/master/word-freqs-screenshot-s.png
+.. image:: http://github.com/wiseman/word-freqs/raw/master/word-freqs-screenshot-s.png
 
 Prerequisites
 -------------
