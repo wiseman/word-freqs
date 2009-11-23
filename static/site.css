@@ -1,0 +1,100 @@
+body {
+    background: rgb(198, 227, 254);
+    margin: 20px 20px 20px 20px;
+    font-family: Tahoma;
+    font-size: 12pt;
+    font-weight: normal;
+}
+
+h1 {
+    font-size: 16pt;
+}
+
+.inputfield {
+    border: 1px solid rgb(255,255,255);
+    background: rgb(220,220,220);
+    font-size: 12pt;
+    height: 22pt;
+    width: 500px;
+}
+
+.button {
+    border: 1px solid rgb(0,0,0);
+    background: rgb(255,255,255);
+    font-size: 12pt;
+    height: 22pt;
+    vertical-align: bottom;
+}
+
+#error {
+    background: rgb(250,160,160);
+    height: 0cm;
+    font-weight: bold;
+}
+
+#stopletters {
+    padding-top: 5px;
+    padding-left: 5px;
+    padding-bottom: 5px;
+    height: 32px;
+}
+
+#chart {
+    margin-bottom: 0.4cm;
+    height: 310px;
+}
+
+.sl-unpressed {
+    border: 1px solid rgb(128, 128, 128);
+    background: rgb(190, 190, 190);
+    float: left;
+    width: 17px;
+    height: 22px;
+    padding: 0px 0px 0px 7px;
+    margin: 1px 1px 1px 1px;
+    border-style: outset;
+}
+
+.sl-pressed {
+    border: 1px solid rgb(128, 128, 128);
+    background: rgb(150, 150, 150);
+    float: left;
+    width: 17px;
+    height: 22px;
+    padding: 0px 0px 0px 7px;
+    margin: 1px 1px 1px 1px;
+    border-style: inset;
+}
+
+td.result {
+    vertical-align: top;
+}
+
+.mfhdr {
+    font-size: 12pt;
+    margin-top: 10px;
+}
+
+.mftbl {
+    background: rgb(255,255,255);
+    border: 1px solid rgb(0,0,0);
+}
+
+.mfrow {
+}
+
+.mfword {
+    font-size: 10pt;
+}
+
+.mfcount {
+    font-size: 10pt;
+    padding-left: 20px;
+}
+
+#stopletters {
+    margin: 0px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
+}
+
+

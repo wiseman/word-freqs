@@ -1,0 +1,396 @@
+$def with (doc_url)
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+            "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+<!--- Load the Dojo toolkit, disable the debug console. -->
+<script type="text/javascript"
+        src="http://ajax.googleapis.com/ajax/libs/dojo/1.2/dojo/dojo.xd.js"
+        djConfig="isDebug:false"></script>
+
+
+<!-- CODE -->
+
+<script type="text/javascript">
+var g_freq_data;
+var g_stop_letters = "";
+
+
+// ------------------------------------------------------------
+// User interface functions
+// ------------------------------------------------------------
+
+// Display an error message to the user.
+
+function display_error(html) {
+    console.warn("displaying error", html);
+    set_progress(false);
+    var containerNode = dojo.byId("error");
+    // Slide in the error message area.
+    dojo.animateProperty( {
+            node: "error",
+                properties: {
+                    height:        {start: "0", end: "50", unit: "px" },
+                    marginTop:     {start: "0", end: "0.2", unit: "cm"},
+                    marginBottom:  {start: "0", end: "0.2", unit: "cm"},
+                    paddingTop:    {start: "0", end: "0.2", unit: "cm"},
+                    paddingBottom: {start: "0", end: "0.2", unit: "cm"}},
+                onEnd: function() {
+                    containerNode.innerHTML = html;}
+        }).play();
+}
+
+
+// Set the status label.
+//
+// If immediate is true, don't fade-out what was there before, just
+// fade-in the new label.
+
+function set_label(html, immediate) {
+    var containerNode = dojo.byId("label");
+    if (immediate) {
+        containerNode.style.opacity = 0;
+        containerNode.innerHTML = html;
+        dojo.fadeIn({node: containerNode}).play();
+    } else {
+        dojo.fadeOut({
+                    node: containerNode,
+                    onEnd: function() {
+                        containerNode.innerHTML = html;
+                        dojo.fadeIn({node: containerNode}).play();}
+            }).play();
+    }
+}
+
+
+// Turn the progress animation on or off.
+
+var progress_on = false;
+
+function set_progress(onoff) {
+    if (progress_on == onoff) {
+        // If it's already in the desired state, return.
+        return;
+    }
+
+    progress_on = onoff;
+    var containerNode = dojo.byId("progress");
+    if (onoff) {
+        dojo.fadeOut({
+                    node: containerNode,
+                    onEnd: function() {
+                        containerNode.innerHTML = "<img src=\"/static/progress-anim.gif\">";
+                        dojo.fadeIn({node: containerNode}).play();}
+            }).play();
+    } else {
+        dojo.fadeOut({
+                    node: containerNode,
+                    onEnd: function() {
+                    containerNode.innerHTML = "";
+                    dojo.fadeIn({node: containerNode}).play();
+                }
+            }).play();
+    }
+}
+
+
+// Set the chart image URL.
+
+function set_chart(url) {
+    var containerNode = dojo.byId("chart");
+    dojo.fadeOut({
+                node: containerNode,
+                onEnd: function() {
+                    containerNode.innerHTML = "<img src=\"" + url + "\">";
+                    dojo.fadeIn({node: containerNode}).play();}
+        }).play();
+}
+
+
+// Set the most frequent terms table.
+
+function set_most_frequent_terms(freqs) {
+    var containerNode = dojo.byId("mostfrequent");
+    var innerHTML = "";
+ 
+   innerHTML = innerHTML + "<div class=\"mfhdr\">Most frequent terms<\/div>";
+    innerHTML = innerHTML + "<table class=\"mftbl\">";
+    for (i = 0; i < freqs.length; i++) {
+        rowHTML = "<tr class=\"mfrow\">\n";
+        rowHTML = rowHTML + "<td class=\"mfword\">" + freqs[i][0] + "<\/td>";
+        rowHTML = rowHTML + "<td class=\"mfcount\">" + freqs[i][1] + "<\/td>\n";
+        rowHTML = rowHTML +	"<\/tr>";
+        innerHTML = innerHTML + rowHTML;
+    }
+    innerHTML = innerHTML + "<\/table>";
+    dojo.fadeOut({
+                node: containerNode,
+                onEnd: function() {
+                    containerNode.innerHTML = innerHTML;
+                    dojo.fadeIn({node: containerNode}).play();}
+        }).play();
+}
+
+
+// Set the stop letter buttons.
+
+function set_stop_letters(sls) {
+    var containerNode = dojo.byId("stopletters");
+    containerNode.innerHTML = "";
+    var all_letters = "abcdefghijklmnopqrstuvwxyz";
+    
+    g_stop_letters = sls;
+    
+    // Build the HTML for each button.
+    for (i = 0; i < all_letters.length; i++) {
+        containerNode.innerHTML = containerNode.innerHTML + \
+            sl_html(all_letters.charAt(i), sls);
+    }
+    // Set the custom "svalue" attribute to hold the letter itself.
+    for (i = 0; i < all_letters.length; i++) {
+        l = all_letters.charAt(i);
+        dojo.byId("sl" + l).svalue = l;
+    }
+    
+    // Set the pressed/unpressed status of each button.
+    for (i = 0; i < all_letters.length; i++) {
+        c = all_letters.charAt(i);
+        node = dojo.byId("sl" + c);
+        if (sls.indexOf(c) >= 0) {
+            node.className = "sl-pressed";
+        } else {
+            node.className = "sl-unpressed";
+        }
+    }
+}
+
+
+// Used when the user selects a stop letter.
+
+function add_stop_letter(l) {
+    if (g_stop_letters.indexOf(l) == -1) {
+        g_stop_letters = g_stop_letters + l;
+    }
+}
+
+// Used when the user unselects a stop letter.
+
+function remove_stop_letter(l) {
+    i = g_stop_letters.indexOf(l);
+    if (i >= 0) {
+        g_stop_letters = g_stop_letters.substring(0, i) + \
+            g_stop_letters.substring(i+1, g_stop_letters.length);
+    }
+}
+
+
+// Toggles a stop letter button.
+
+function sl_click(node) {
+    if (node.className == "sl-unpressed") {
+        node.className = "sl-pressed";
+        add_stop_letter(node.svalue);
+    } else {
+        node.className = "sl-unpressed";
+        remove_stop_letter(node.svalue);
+    }
+
+    // Need to re-run the analysis with the new set of stop letters.
+    analyze(g_freq_data, g_stop_letters, "$doc_url");
+}
+
+
+// Highlights/unhighlights a stop letter button for mousovers/mouseouts.
+
+function sl_highlight(node, onoff) {
+    if (onoff) {
+        node.style.background = "rgb(200,200,200)";
+    } else {
+        // These need to be kept in sync with the styles in site.css. (FIXME?)
+        if (node.className == "sl-pressed") {
+            node.style.background = 'rgb(150,150,150)';
+        } else {
+            node.style.background = 'rgb(190,190,190)';
+        }
+    }
+}
+
+
+// Generates the HTML for a stop button, assigning it the correct
+// initial class.
+
+function sl_html(l, stops) {
+    if (stops.indexOf(l) >= 0) {
+        return "<div class=\"sl-unpressed\"" +
+            "id=\"sl" + l + "\" " +
+            "onclick=\"sl_click(this);\" " +
+            "onmouseover=\"sl_highlight(this, true);\" " +
+            "onmouseout=\"sl_highlight(this, false);\"" +
+            ">" + l + "<\/div>";
+    } else {
+        return "<div class=\"sl-unpressed\" " +
+            "id=\"sl" + l + "\" " +
+            "onclick=\"sl_click(this);\" " +
+            "onmouseover=\"sl_highlight(this, true);\" " +
+            "onmouseout=\"sl_highlight(this, false);\"" +
+            ">" + l + "<\/div>";
+    }
+}
+
+
+// Unselects all stop letters when the user hits the reset button.
+
+function reset_stop_letters() {
+    set_stop_letters("");
+    // Need to re-run the analysis.
+    analyze(g_freq_data, g_stop_letters, "$doc_url");
+
+    // Don't submit the form!
+    return false;
+}
+
+
+// ------------------------------------------------------------
+// AJAX functions
+// ------------------------------------------------------------
+
+// Runs a new analysis and displays the results.
+
+function analyze(freq_data, stop_letters, url) {
+    console.log("Analyzing data..." );
+    set_label("2. Analyzing...", false);
+    set_progress(true);
+    g_freq_data = freq_data;
+
+    dojo.xhrPost({
+                url: '/a',
+                handleAs: 'json',
+                content: {
+                    'freq_data': dojo.toJson(freq_data),
+                    'stop_letters': dojo.toJson(stop_letters)},
+                load: function(data, ioargs) {
+                    display_results(data);},
+                error: function(error, args) {
+                    console.warn("error!", error, args);
+                    display_error(error);},
+                timeout: 14000
+                });
+}
+
+
+// Displays results of an analysis.
+
+function display_results(results) {
+    console.log(results);
+    set_label("3. Results:", false);
+    set_progress(false);
+    set_chart(results["chart_url"]);
+    set_most_frequent_terms(results["most_common"]);
+    set_stop_letters(results["stop_letters"]);
+}
+
+// Fetches data for a URL, runs an analysis and displays the results.
+
+function fetch(url) {
+    console.log("Fetching " + url);
+    set_label("1. Fetching ...", true);
+    set_progress(true);
+    dojo.xhrGet({
+                url: '/t?url=' + escape('$doc_url'),
+                handleAs: 'json',
+                load: function(data, args) {
+                    if (data["error"]) {
+                        console.warn("Got an app error", data);
+                        display_error(data['error']);
+                    } else {
+                        analyze(data["freq_data"], g_stop_letters, url);
+                    }},
+                error: function(error, args) {
+                    console.warn("error!", error, args);
+                    display_error(error);},
+                timeout: 14000
+                });
+}
+
+
+// ------------------------------------------------------------
+// Kick off the fetching/analyzing/displaying.
+// ------------------------------------------------------------
+
+function init() {
+    fetch('$doc_url');
+};
+
+dojo.addOnLoad(init);
+</script>
+
+<!-- HTML -->
+
+<link rel="stylesheet" type="text/css" href="/static/site.css">
+
+<title>Text Analyzer: Results for $doc_url</title>
+</head>
+
+<body>
+
+<h1>Text Analyzer: Results for $doc_url</h1>
+
+<form method="GET" action="r">
+<p>
+New URL?
+<input class="inputfield" type="text" name="url" value="$doc_url">
+<input class="button" type="submit" value="Analyze">
+</p>
+</form>
+
+<!-- See display_error -->
+<div id="error">
+</div>
+
+<table border="0" style="margin: 0px 0px 0px 0px; padding: 0px 0px 0px 0px;">
+<tr>
+<td style="width: 200px; height: 40px;">
+<!-- See set_label. -->
+<span id="label"></span>
+</td>
+<td style="width: 100px; height: 40px;">
+<!-- See set_progress. -->
+<span id="progress"></span>
+</td>
+</tr>
+</table>
+
+<table>
+
+<tr>
+<td class="result">
+<!-- See set_chart. -->
+<div id="chart">
+</div>
+</td>
+<td class="result">
+<!-- See set_most_frequent_terms -->
+<div id="mostfrequent">
+</div>
+</td>
+</tr>
+
+</table>
+
+
+<p>
+Stop letters (words containing these letters won't be counted):
+</p>
+<div style="margin-left: 1.5cm;">
+<div id="stopletters">
+</div>
+
+<form action="/">
+<input class="button" type="submit" value="Reset" onclick="return reset_stop_letters();">
+</form>
+</div>
+
+</body>
+
+</html>
