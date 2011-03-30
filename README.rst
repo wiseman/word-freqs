@@ -22,7 +22,7 @@ Running it
 
 Start the analyzer with ``python code.py``, then browse to `http://localhost:8080/`_.
 
-.. image:: http://github.com/wiseman/word-freqs/raw/master/word-freqs-screenshot-s.png
+.. image:: https://github.com/wiseman/word-freqs/raw/master/word-freqs-screenshot-s.png
 
 
 
